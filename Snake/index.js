@@ -9,7 +9,7 @@ var square = 50;
 var colCount = canvas.width / square;
 var rowCount = canvas.height / square;
 
-var LEFT = 37, RIGHT = 39, UP = 38, DOWN = 40;
+var LEFT = 0, RIGHT = 1, UP = 2, DOWN = 3;
 
 class Snake {
     constructor(colors, parts, direction, keys) {
@@ -27,14 +27,11 @@ class Snake {
 
     drawSnakePart(part, isHead) {
         context.fillStyle = isHead ? this.colors[0] : this.colors[1];
-        context.fillRect(part.c * square, part.l * square, square, square);
+        context.fillRect(part.c * square, part.r * square, square, square);
     }
 
     draw() {
-        for (var i in this.parts) {
-            var part = this.parts[i];
-            this.drawSnakePart(part, i == "" + (this.parts.length - 1));
-        }
+		this.parts.forEach((part, i)=>this.drawSnakePart(part, i === (this.parts.length - 1)));
     }
 
     makeNewHead() {
@@ -42,25 +39,25 @@ class Snake {
         if (this.direction == RIGHT) {
             newHead = {
                 c: this.head.c + 1,
-                l: this.head.l
+                r: this.head.r
             }
         }
         else if (this.direction == DOWN) {
             newHead = {
                 c: this.head.c,
-                l: this.head.l + 1
+                r: this.head.r + 1
             }
         }
         else if (this.direction == LEFT) {
             newHead = {
                 c: this.head.c - 1,
-                l: this.head.l
+                r: this.head.r
             }
         }
         else if (this.direction == UP) {
             newHead = {
                 c: this.head.c,
-                l: this.head.l - 1
+                r: this.head.r - 1
             }
         }
 
@@ -68,16 +65,16 @@ class Snake {
             newHead.c = 0;
         }
 
-        if (newHead.l >= rowCount) {
-            newHead.l = 0;
+        if (newHead.r >= rowCount) {
+            newHead.r = 0;
         }
 
         if (newHead.c < 0) {
             newHead.c = colCount - 1;
         }
 
-        if (newHead.l < 0) {
-            newHead.l = rowCount - 1;
+        if (newHead.r < 0) {
+            newHead.r = rowCount - 1;
         }
 
         return newHead;
@@ -97,7 +94,7 @@ class Snake {
     }
 
     checkEatsTheApple() {
-        if (this.head.c == apple.c && this.head.l == apple.l) {
+        if (this.head.c == apple.c && this.head.r == apple.r) {
             this.mustGrowBy = 2;
             this.score += this.parts.length;
             return true;
@@ -108,7 +105,7 @@ class Snake {
     checkEatsHimself() {
         for (var i = 0; i < this.parts.length - 1; i++) {
             var part = this.parts[i];
-            if (this.head.c == part.c && this.head.l == part.l) {
+            if (this.head.c == part.c && this.head.r == part.r) {
                 return true;
             }
         }
@@ -118,7 +115,7 @@ class Snake {
     checkEatsSnake(snake) {
         for (var i = 0; i < snake.parts.length; i++) {
             var part = snake.parts[i];
-            if (this.head.c == part.c && this.head.l == part.l) {
+            if (this.head.c == part.c && this.head.r == part.r) {
                 return true;
             }
         }
@@ -152,8 +149,8 @@ function newGame() {
         new Snake(
             ['rgba(0, 200, 0, 0.7)', 'rgba(100, 200, 100, 0.7)'],
             [
-                { c: 1, l: 1 },
-                { c: 2, l: 1 }
+                { c: 1, r: 1 },
+                { c: 2, r: 1 }
             ],
             RIGHT,
             {
@@ -165,8 +162,8 @@ function newGame() {
         new Snake(
             ['rgba(0, 0, 200, 0.7)', 'rgba(100, 100, 200, 0.7)'],
             [
-                { c: colCount - 2, l: rowCount - 2 },
-                { c: colCount - 3, l: rowCount - 2 }
+                { c: colCount - 2, r: rowCount - 2 },
+                { c: colCount - 3, r: rowCount - 2 }
             ],
             LEFT,
             {
@@ -182,7 +179,7 @@ function newGame() {
 
 function drawApple() {
     context.fillStyle = 'red';
-    context.fillRect(apple.c * square, apple.l * square, square, square);
+    context.fillRect(apple.c * square, apple.r * square, square, square);
 }
 
 function drawScore() {
@@ -196,7 +193,7 @@ function drawScore() {
 function makeApple() {
     return {
         c: Math.round(Math.random() * (colCount - 1)),
-        l: Math.round(Math.random() * (rowCount - 1))
+        r: Math.round(Math.random() * (rowCount - 1))
     }
 }
 
