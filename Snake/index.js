@@ -9,7 +9,25 @@ var square = 50;
 var colCount = canvas.width / square;
 var rowCount = canvas.height / square;
 
-var LEFT = 0, RIGHT = 1, UP = 2, DOWN = 3;
+var LEFT = "LEFT", RIGHT = "RIGHT", UP = "UP", DOWN = "DOWN";
+var directionChanges = {
+	LEFT:{
+		c: -1,
+		r: 0
+	},
+	RIGHT:{
+		c: 1,
+		r: 0
+	},
+	UP:{
+		c: 0,
+		r: -1
+	},
+	DOWN:{
+		c: 0,
+		r: 1
+	}
+}
 
 class Snake {
     constructor(colors, parts, direction, keys) {
@@ -31,59 +49,27 @@ class Snake {
     }
 
     draw() {
-		this.parts.forEach((part, i)=>this.drawSnakePart(part, i === (this.parts.length - 1)));
+		this.parts.forEach(part => this.drawSnakePart(part, part === this.head));
     }
 
     makeNewHead() {
-        var newHead;
-        if (this.direction == RIGHT) {
-            newHead = {
-                c: this.head.c + 1,
-                r: this.head.r
-            }
-        }
-        else if (this.direction == DOWN) {
-            newHead = {
-                c: this.head.c,
-                r: this.head.r + 1
-            }
-        }
-        else if (this.direction == LEFT) {
-            newHead = {
-                c: this.head.c - 1,
-                r: this.head.r
-            }
-        }
-        else if (this.direction == UP) {
-            newHead = {
-                c: this.head.c,
-                r: this.head.r - 1
-            }
-        }
+		var delta = directionChanges[this.direction];
+		if(typeof delta === "undefined") return null;
+		
+		var newHead = {
+			c: this.head.c + delta.c,
+			r: this.head.r + delta.r
+		};
 
-        if (newHead.c >= colCount) {
-            newHead.c = 0;
-        }
+		// wrap at borders
+		newHead.c = (colCount + newHead.c) % colCount;
+		newHead.r = (rowCount + newHead.r) % rowCount;
 
-        if (newHead.r >= rowCount) {
-            newHead.r = 0;
-        }
-
-        if (newHead.c < 0) {
-            newHead.c = colCount - 1;
-        }
-
-        if (newHead.r < 0) {
-            newHead.r = rowCount - 1;
-        }
-
-        return newHead;
+        this.parts.push(newHead);
     }
 
     advance() {
-        var head = this.makeNewHead();
-
-        this.parts.push(head);
+        this.makeNewHead();
 
         if (this.mustGrowBy > 0) {
             this.mustGrowBy = this.mustGrowBy - 1;
@@ -103,38 +89,17 @@ class Snake {
     }
 
     checkEatsHimself() {
-        for (var i = 0; i < this.parts.length - 1; i++) {
-            var part = this.parts[i];
-            if (this.head.c == part.c && this.head.r == part.r) {
-                return true;
-            }
-        }
-        return false;
+		return this.parts.some(part => this.head !== part && this.head.c == part.c && this.head.r == part.r);
     }
 
     checkEatsSnake(snake) {
-        for (var i = 0; i < snake.parts.length; i++) {
-            var part = snake.parts[i];
-            if (this.head.c == part.c && this.head.r == part.r) {
-                return true;
-            }
-        }
-        return false;
+		return snake.parts.some(part => this.head.c == part.c && this.head.r == part.r);
     }
 
     checkKey(keyCode) {
-        if (keyCode == this.keys.left) {
-            this.direction = LEFT;
-        }
-        else if (keyCode == this.keys.right) {
-            this.direction = RIGHT;
-        }
-        else if (keyCode == this.keys.up) {
-            this.direction = UP;
-        }
-        else if (keyCode == this.keys.down) {
-            this.direction = DOWN;
-        }
+		Object.keys(this.keys).
+			filter(k => this.keys[k] === keyCode).
+			forEach(k => this.direction = k);
     }
 
     makeSmall() {
@@ -154,10 +119,10 @@ function newGame() {
             ],
             RIGHT,
             {
-                left: 37,
-                right: 39,
-                up: 38,
-                down: 40
+                LEFT: 37,
+                RIGHT: 39,
+                UP: 38,
+                DOWN: 40
             }),
         new Snake(
             ['rgba(0, 0, 200, 0.7)', 'rgba(100, 100, 200, 0.7)'],
@@ -167,14 +132,14 @@ function newGame() {
             ],
             LEFT,
             {
-                left: 81,
-                right: 68,
-                up: 90,
-                down: 83
+                LEFT: 81,
+                RIGHT: 68,
+                UP: 90,
+                DOWN: 83
             })
     ];
 
-    apple = makeApple();
+    makeNewApple();
 }
 
 function drawApple() {
@@ -190,56 +155,54 @@ function drawScore() {
     context.fillText(scoreText, 2, 20);
 }
 
-function makeApple() {
-    return {
+function makeNewApple() {
+    apple = {
         c: Math.round(Math.random() * (colCount - 1)),
         r: Math.round(Math.random() * (rowCount - 1))
     }
 }
 
-var timesCalled = 0;
-function gameLoop(delta) {
-    drawApple();
+function draw(){
+	context.clearRect(0, 0, canvas.width, canvas.height);
+
+	drawApple();
     snakes.forEach(snake => snake.draw());
     drawScore();
-
-    if (timesCalled == 19) {
-        snakes.forEach(snake => snake.advance());
-        if (snakes.some(snake => snake.checkEatsTheApple())) {
-            apple = makeApple();
-        }
-        snakes.filter(snake => snake.checkEatsHimself()).forEach(snake => snake.makeSmall());
-
-        snakes.forEach(snake => {
-            snakes.filter(snake2 => { return snake2 !== snake && snake2.checkEatsSnake(snake) }).
-                forEach(snake3 => snake3.makeSmall());
-        })
-    }
-
-    timesCalled = timesCalled + 1;
-    if (timesCalled == 20) {
-        timesCalled = 0;
-    }
 }
 
-var lastTime = null;
-function mainLoop(time) {
+function update(){
+	snakes.forEach(snake => snake.advance());
 
-    var delta = 0;
-    if (lastTime !== null) {
-        delta = time - lastTime;
-    }
-    lastTime = time;
+	if (snakes.some(snake => snake.checkEatsTheApple())) {
+		makeNewApple();
+	}
 
-    context.clearRect(0, 0, canvas.width, canvas.height);
+	snakes.filter(snake => snake.checkEatsHimself()).
+		forEach(snake => snake.makeSmall());
 
-    gameLoop(delta);
+	snakes.forEach(snake => {
+		snakes.filter(snake2 => snake2 !== snake && snake2.checkEatsSnake(snake)).
+			forEach(snake3 => snake3.makeSmall());
+	})
+}
 
-    window.requestAnimationFrame(mainLoop);
+function gameStep() {
+	update();
+	draw();
+}
+
+var lastStepTime = 0;
+function gameLoop(time) {
+	if(lastStepTime === 0 || time - lastStepTime > 300){
+		gameStep();
+		lastStepTime = time;
+	}
+
+    window.requestAnimationFrame(gameLoop);
 }
 
 newGame();
-window.requestAnimationFrame(mainLoop);
+window.requestAnimationFrame(gameLoop);
 
 window.onkeydown = function (e) {
     snakes.forEach(snake => snake.checkKey(e.keyCode));
