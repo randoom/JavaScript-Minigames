@@ -6,8 +6,7 @@ var canvas = document.getElementById('canvas');
 var context = canvas.getContext('2d');
 
 var squareSize = 50;
-var colCount = canvas.width / squareSize;
-var rowCount = canvas.height / squareSize;
+var colCount, rowCount;
 
 function drawSquare(square, color)
 {
@@ -111,7 +110,7 @@ class Snake {
 
     checkKey(keyCode) {
 		Object.keys(this.keyControls).
-			filter(k => this.keyControls[k] === keyCode).
+			filter(k => this.keyControls[k] == keyCode).
 			forEach(k => this.direction = k);
     }
 
@@ -130,13 +129,14 @@ function newGame() {
                 { c: 1, r: 1 },
                 { c: 2, r: 1 }
             ],
-            RIGHT,
-            {
-                LEFT: 37,
-                RIGHT: 39,
-                UP: 38,
-                DOWN: 40
-            }),
+			RIGHT,
+			{
+                LEFT: 81,
+                RIGHT: 68,
+                UP: 90,
+                DOWN: 83
+			}
+		),
         new Snake(
             ['rgba(0, 0, 200, 0.7)', 'rgba(100, 100, 200, 0.7)'],
             [
@@ -145,18 +145,19 @@ function newGame() {
             ],
             LEFT,
             {
-                LEFT: 81,
-                RIGHT: 68,
-                UP: 90,
-                DOWN: 83
-            })
+                LEFT: 37,
+                RIGHT: 39,
+                UP: 38,
+                DOWN: 40
+			}
+		)
     ];
 
     makeNewApple();
 }
 
 function drawApple() {
-	drawSquare(apple.c, 'red');
+	drawSquare(apple, 'red');
 }
 
 function makeNewApple() {
@@ -205,9 +206,31 @@ function gameLoop(time) {
     window.requestAnimationFrame(gameLoop);
 }
 
-newGame();
 window.requestAnimationFrame(gameLoop);
 
 window.onkeydown = function (e) {
     snakes.forEach(snake => snake.checkKey(e.keyCode));
 }
+
+document.querySelectorAll("button").forEach(b => {
+	b.onclick = ()=> snakes.forEach(snake => snake.checkKey(b.attributes["keycode"].value));
+});
+
+function resizeCanvas()
+{
+	var targetWidth = document.documentElement.clientWidth - 2;
+	var targetHeight = document.documentElement.clientHeight - 130 - 2;
+	colCount = Math.floor(targetWidth / squareSize);
+	rowCount = Math.floor(targetHeight / squareSize);
+
+	canvas.width =  colCount * squareSize;
+	canvas.height =  rowCount * squareSize;
+}
+
+resizeCanvas();
+newGame();
+
+window.addEventListener('resize', ()=> {
+	resizeCanvas();
+	newGame();
+});
