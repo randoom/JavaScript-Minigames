@@ -5,9 +5,22 @@ var canvas = document.getElementById('canvas');
 /** @type {CanvasRenderingContext2D} */
 var context = canvas.getContext('2d');
 
-var square = 50;
-var colCount = canvas.width / square;
-var rowCount = canvas.height / square;
+var squareSize = 50;
+var colCount = canvas.width / squareSize;
+var rowCount = canvas.height / squareSize;
+
+function drawSquare(square, color)
+{
+	context.fillStyle = color;
+	context.fillRect(square.c * squareSize, square.r * squareSize, squareSize, squareSize);
+}
+
+function drawScore(scores) {
+    context.fillStyle = 'teal';
+	context.font = '20px sans';
+	var scoreText = scores.reduce((p, c, i) => p + "Player " + (i + 1) + ": " + c + "   ", "");
+    context.fillText(scoreText, 2, 20);
+}
 
 var LEFT = "LEFT", RIGHT = "RIGHT", UP = "UP", DOWN = "DOWN";
 var directionChanges = {
@@ -27,14 +40,19 @@ var directionChanges = {
 		c: 0,
 		r: 1
 	}
+};
+
+function isSameSquare(square1, square2)
+{
+	return square1.c === square2.c && square1.r === square2.r;
 }
 
 class Snake {
-    constructor(colors, parts, direction, keys) {
+    constructor(colors, parts, direction, keyControls) {
         this.colors = colors;
         this.parts = parts;
         this.direction = direction;
-        this.keys = keys;
+        this.keyControls = keyControls;
         this.score = 0;
         this.mustGrowBy = 0;
     }
@@ -43,13 +61,8 @@ class Snake {
         return this.parts[this.parts.length - 1];
     }
 
-    drawSnakePart(part, isHead) {
-        context.fillStyle = isHead ? this.colors[0] : this.colors[1];
-        context.fillRect(part.c * square, part.r * square, square, square);
-    }
-
     draw() {
-		this.parts.forEach(part => this.drawSnakePart(part, part === this.head));
+		this.parts.forEach(part => drawSquare(part, part === this.head ? this.colors[0] : this.colors[1]));
     }
 
     makeNewHead() {
@@ -80,7 +93,7 @@ class Snake {
     }
 
     checkEatsTheApple() {
-        if (this.head.c == apple.c && this.head.r == apple.r) {
+        if (isSameSquare(this.head, apple)) {
             this.mustGrowBy = 2;
             this.score += this.parts.length;
             return true;
@@ -89,16 +102,16 @@ class Snake {
     }
 
     checkEatsHimself() {
-		return this.parts.some(part => this.head !== part && this.head.c == part.c && this.head.r == part.r);
+		return this.parts.some(part => this.head !== part && isSameSquare(this.head, part));
     }
 
     checkEatsSnake(snake) {
-		return snake.parts.some(part => this.head.c == part.c && this.head.r == part.r);
+		return snake.parts.some(part => isSameSquare(this.head, part));
     }
 
     checkKey(keyCode) {
-		Object.keys(this.keys).
-			filter(k => this.keys[k] === keyCode).
+		Object.keys(this.keyControls).
+			filter(k => this.keyControls[k] === keyCode).
 			forEach(k => this.direction = k);
     }
 
@@ -143,16 +156,7 @@ function newGame() {
 }
 
 function drawApple() {
-    context.fillStyle = 'red';
-    context.fillRect(apple.c * square, apple.r * square, square, square);
-}
-
-function drawScore() {
-    var scoreText = "";
-    snakes.forEach((snake, i) => scoreText += "Score " + (i + 1) + ": " + snake.score + "   ")
-    context.fillStyle = 'teal';
-    context.font = '20px sans';
-    context.fillText(scoreText, 2, 20);
+	drawSquare(apple.c, 'red');
 }
 
 function makeNewApple() {
@@ -167,7 +171,7 @@ function draw(){
 
 	drawApple();
     snakes.forEach(snake => snake.draw());
-    drawScore();
+    drawScore(snakes.map(snake => snake.score));
 }
 
 function update(){
@@ -193,7 +197,7 @@ function gameStep() {
 
 var lastStepTime = 0;
 function gameLoop(time) {
-	if(lastStepTime === 0 || time - lastStepTime > 300){
+	if(lastStepTime === 0 || time - lastStepTime > 300) {
 		gameStep();
 		lastStepTime = time;
 	}
