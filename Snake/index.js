@@ -1,6 +1,4 @@
-// @ts-check
 /** @type {HTMLCanvasElement} */
-// @ts-ignore
 var canvas = document.getElementById('canvas');
 /** @type {CanvasRenderingContext2D} */
 var context = canvas.getContext('2d');
@@ -17,7 +15,7 @@ function drawSquare(square, color)
 function drawScore(scores) {
     context.fillStyle = 'teal';
 	context.font = '20px sans';
-	var scoreText = scores.reduce((p, c, i) => p + "Player " + (i + 1) + ": " + c + "   ", "");
+	var scoreText = scores.reduce((a, c, i) => a + "Player " + (i + 1) + ": " + c + "   ", "");
     context.fillText(scoreText, 2, 20);
 }
 
@@ -100,12 +98,8 @@ class Snake {
         return false;
     }
 
-    checkEatsHimself() {
-		return this.parts.some(part => this.head !== part && isSameSquare(this.head, part));
-    }
-
     checkEatsSnake(snake) {
-		return snake.parts.some(part => isSameSquare(this.head, part));
+		return snake.parts.some(part => this.head !== part && isSameSquare(this.head, part));
     }
 
     checkKey(keyCode) {
@@ -182,11 +176,8 @@ function update(){
 		makeNewApple();
 	}
 
-	snakes.filter(snake => snake.checkEatsHimself()).
-		forEach(snake => snake.makeSmall());
-
 	snakes.forEach(snake => {
-		snakes.filter(snake2 => snake2 !== snake && snake2.checkEatsSnake(snake)).
+		snakes.filter(snake2 => snake2.checkEatsSnake(snake)).
 			forEach(snake3 => snake3.makeSmall());
 	})
 }
